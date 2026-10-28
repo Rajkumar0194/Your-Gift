@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Happy Birthday Shiny! 💖</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Comfortaa:wght@500;700&family=Fredoka:wght@400;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            appPink: '#fff0f3',
+            appHeader: '#ff758f',
+            appCardBg: '#ffccd5',
+            appAccent: '#ff4d6d'
+          },
+          fontFamily: {
+            handwriting: ['Caveat', 'cursive'],
+            rounded: ['Comfortaa', 'Fredoka', 'sans-serif'],
+            sans: ['Outfit', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at center, #2d0b1e 0%, #0f050e 100%);
+      font-family: 'Outfit', sans-serif;
+      overflow: hidden;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Ambient Floating Background Hearts */
+    .bg-heart {
+      position: absolute;
+      color: rgba(255, 182, 193, 0.45);
+      pointer-events: none;
+      animation: floatUp 8s linear infinite;
+      z-index: 1;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(105vh) scale(0.8) rotate(0deg); opacity: 0; }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.8; }
+      100% { transform: translateY(-10vh) scale(1.2) rotate(360deg); opacity: 0; }
+    }
+
+    @keyframes keyRotate {
+      0% { transform: rotate(-10deg) translateY(0); }
+      50% { transform: rotate(10deg) translateY(-6px); }
+      100% { transform: rotate(-10deg) translateY(0); }
+    }
+    .key-anim {
+      animation: keyRotate 3s ease-in-out infinite;
+    }
+
+    .flame-anim {
+      animation: flameFlicker 0.6s infinite alternate ease-in-out;
+      transform-origin: center bottom;
+    }
+    @keyframes flameFlicker {
+      0% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 8px #ffb703); }
+      100% { transform: scale(1.15) rotate(3deg); filter: drop-shadow(0 0 15px #ff9e00); }
+    }
+
+    .envelope-top {
+      clip-path: polygon(0 0, 50% 50%, 100% 0);
+    }
+
+    .letter-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .letter-scroll::-webkit-scrollbar-thumb {
+      background: #ff85a1;
+      border-radius: 10px;
+    }
+
+    .screen {
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      display: none;
+    }
+    .screen.active {
+      display: flex;
+    }
+
+    .pulse-btn {
+      animation: softPulse 2s infinite;
+    }
+    @keyframes softPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(255, 77, 109, 0.3); }
+      50% { transform: scale(1.03); box-shadow: 0 6px 20px rgba(255, 77, 109, 0.5); }
+    }
+
+    /* FIX: POLAROID STACK STYLING */
+    .polaroid-deck-area {
+      position: relative;
+      width: 100%;
+      max-width: 270px;
+      height: 370px;
+      margin: 10px auto;
+      perspective: 1000px;
+    }
+
+    .polaroid-card {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 360px;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 12px 12px 16px 12px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0,0,0,0.08);
+      border: 1px solid rgba(0,0,0,0.05);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      transition: transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.45s ease;
+      will-change: transform, opacity;
+      transform-origin: center bottom;
+    }
+
+    .polaroid-img-box {
+      width: 100%;
+      height: 250px;
+      background-color: #f8fafc;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #f1f5f9;
+      position: relative;
+    }
+
+    .polaroid-caption-box {
+      width: 100%;
+      text-align: center;
+      padding-top: 8px;
+      border-top: 1px dashed #fbcfe8;
+    }
+
+    .polaroid-card.swiped-out {
+      transform: translateX(130%) rotate(25deg) !important;
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-0 sm:p-4">
+
+  <!-- Floating Ambient Hearts -->
+  <div id="heartsContainer" class="fixed inset-0 pointer-events-none overflow-hidden"></div>
+
+  <!-- Audio Element for Acoustic Background Music -->
+  <audio id="bgMusic" loop preload="auto" src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=romantic-acoustic-guitar-112191.mp3"></audio>
+
+  <!-- MOBILE PHONE APP CONTAINER FRAME -->
+  <main class="relative w-full sm:max-w-[400px] h-[100vh] sm:h-[840px] bg-gradient-to-b from-pink-100 via-pink-200 to-rose-200 sm:rounded-[42px] shadow-2xl border-0 sm:border-[8px] border-slate-900 overflow-hidden flex flex-col justify-between z-10">
+
+    <!-- Phone Top Bar -->
+    <header class="relative z-30 px-6 pt-4 pb-2 flex justify-between items-center text-pink-700 text-xs font-semibold select-none">
+      <div class="flex items-center gap-1.5 bg-white/60 backdrop-blur-md px-3 py-1 rounded-full shadow-sm">
+        <i class="fas fa-heart text-rose-500 animate-pulse"></i>
+        <span id="headerTitle">For Shiny 💖</span>
+      </div>
+      <button onclick="toggleMusic()" id="musicToggleBtn" class="w-8 h-8 rounded-full bg-white/70 backdrop-blur-md text-pink-600 flex items-center justify-center shadow-md active:scale-95 transition">
+        <i id="musicIcon" class="fas fa-music text-xs"></i>
+      </button>
+    </header>
+
+    <!-- ==================== SCREEN 1: PASSCODE ENTRY ==================== -->
+    <section id="screen1" class="screen active flex-1 flex-col items-center justify-between px-6 py-6 z-20">
+      
+      <div class="flex flex-col items-center mt-2">
+        <div class="relative w-28 h-28 flex items-center justify-center">
+          <svg class="w-24 h-24 text-rose-500 filter drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <div class="absolute top-0 right-1 key-anim text-amber-300 text-3xl filter drop-shadow">
+            🔑
+          </div>
+          <div class="absolute inset-0 flex items-center justify-center text-slate-800 text-xs pt-2">
+            <div class="w-2.5 h-3.5 bg-rose-950 rounded-full border border-pink-300"></div>
+          </div>
+        </div>
+
+        <h2 class="font-rounded font-bold text-slate-800 text-xl tracking-wider mt-3">ENTER PASSCODE</h2>
+        <p class="text-xs text-rose-600/80 font-medium mt-1">Something special is waiting for you</p>
+      </div>
+
+      <div id="passcodeBoxContainer" class="flex gap-3 my-4">
+        <div class="pass-box w-12 h-14 rounded-2xl bg-white/80 border-2 border-pink-300 flex items-center justify-center text-2xl font-bold text-rose-600 shadow-inner transition-all"></div>
+        <div class="pass-box w-12 h-14 rounded-2xl bg-white/80 border-2 border-pink-300 flex items-center justify-center text-2xl font-bold text-rose-600 shadow-inner transition-all"></div>
+        <div class="pass-box w-12 h-14 rounded-2xl bg-white/80 border-2 border-pink-300 flex items-center justify-center text-2xl font-bold text-rose-600 shadow-inner transition-all"></div>
+        <div class="pass-box w-12 h-14 rounded-2xl bg-white/80 border-2 border-pink-300 flex items-center justify-center text-2xl font-bold text-rose-600 shadow-inner transition-all"></div>
+      </div>
+
+      <div class="w-full max-w-[280px] grid grid-cols-3 gap-3 mb-2">
+        <button onclick="pressKey('1')" class="h-13 py-3 rounded-2xl bg-white/70 backdrop-blur-md text-pink-800 text-xl font-bold shadow hover:bg-white active:scale-95 transition">1</button>
+        <button onclick="pressKey('2')" class="h-13 py-3 rounded-2xl bg-white/70 backdrop-blur-md text-pink-800 text-xl font-bold shadow hover:bg-white active:scale-95 transition">2</button>
+        <button onclick="pressKey('3')" class="h-13 py-3 rounded-2xl bg-white/70 backdrop-blur-md text-pink-800 text-xl font-bold shadow hover:bg-white active:scale-95 transition">3</button>
+        <button onclick="pressKey('4')" class="h-13 py-3 rounded-2xl bg-white/70 backdrop-blur-md text-pink-800 text-xl font-bold shadow hover:bg-white active:scale-95 transition">4</button>
+        <button onclick="pressKey('5')" class="h-13 py-3 rounded-2xl bg-white/70 backdrop-blur-md text-pink-800 text-xl font-bold shadow hover:bg-white active:scale-95 transition">5</button>
+        <button onclick="pressKey('6')" class="h-13 py-3 rounded-2xl bg-white/70 backdrop-blur-md text-pink-800 text-xl font-bold shadow hover:bg-white active:scale-95 transition">6</button>
+        <button onclick="pressKey('7')" class="h-13 py-3 rounded-2xl bg-white/70 backdrop-blur-md text-pink-800 text-xl font-bold shadow hover:bg-white active:scale-95 transition">7</button>
+        <button onclick="pressKey('8')" class="h-13 py-3 rounded-2xl bg-white/70 backdrop-blur-md text-pink-800 text-xl font-bold shadow hover:bg-white active:scale-95 transition">8</button>
+        <button onclick="pressKey('9')" class="h-13 py-3 rounded-2xl bg-white/70 backdrop-blur-md text-pink-800 text-xl font-bold shadow hover:bg-white active:scale-95 transition">9</button>
+        <div class="h-13"></div>
+        <button onclick="pressKey('0')" class="h-13 py-3 rounded-2xl bg-white/70 backdrop-blur-md text-pink-800 text-xl font-bold shadow hover:bg-white active:scale-95 transition">0</button>
+        <button onclick="pressBackspace()" class="h-13 py-3 rounded-2xl bg-rose-200/80 text-rose-700 text-xl font-bold shadow hover:bg-rose-300 active:scale-95 transition flex items-center justify-center">✕</button>
+      </div>
+      <p id="passHint" class="text-[11px] text-pink-600/70 font-semibold mb-1">Enter passcode: 2910</p>
+    </section>
+
+    <!-- ==================== SCREEN 2: BEAR GREETING ==================== -->
+    <section id="screen2" class="screen flex-1 flex-col items-center justify-between px-6 py-8 z-20 text-center">
+      <div class="mt-4">
+        <h1 class="font-handwriting text-4xl sm:text-5xl font-bold text-rose-600 leading-tight">
+          Happy Birthday,<br/><span class="text-rose-700 underline decoration-pink-400">Shiny</span> 🎉
+        </h1>
+      </div>
+
+      <div class="relative my-4 w-60 h-60 flex items-center justify-center">
+        <svg class="w-full h-full filter drop-shadow-md" viewBox="0 0 200 200" fill="none">
+          <circle cx="100" cy="100" r="85" fill="#FFE5EC" />
+          <circle cx="70" cy="90" r="30" fill="#FFFFFF"/>
+          <circle cx="50" cy="68" r="10" fill="#FFFFFF"/>
+          <circle cx="50" cy="68" r="6" fill="#FFCCD5"/>
+          <circle cx="90" cy="68" r="10" fill="#FFFFFF"/>
+          <circle cx="90" cy="68" r="6" fill="#FFCCD5"/>
+          <circle cx="130" cy="90" r="30" fill="#B07D62"/>
+          <circle cx="110" cy="68" r="10" fill="#B07D62"/>
+          <circle cx="110" cy="68" r="6" fill="#8D5B4C"/>
+          <circle cx="150" cy="68" r="10" fill="#B07D62"/>
+          <circle cx="150" cy="68" r="6" fill="#8D5B4C"/>
+          <circle cx="62" cy="85" r="3" fill="#333333"/>
+          <circle cx="78" cy="85" r="3" fill="#333333"/>
+          <ellipse cx="70" cy="92" rx="4" ry="3" fill="#FFB703"/>
+          <circle cx="122" cy="85" r="3" fill="#333333"/>
+          <circle cx="138" cy="85" r="3" fill="#333333"/>
+          <ellipse cx="130" cy="92" rx="4" ry="3" fill="#FFE5EC"/>
+          <polygon points="70,40 60,65 80,65" fill="#FF4D6D" />
+          <polygon points="130,40 120,65 140,65" fill="#70D6FF" />
+          <rect x="75" y="115" width="50" height="30" rx="6" fill="#FF85A1" />
+          <rect x="70" y="110" width="60" height="10" rx="4" fill="#FFF0F3" />
+          <path d="M75 120 Q80 125 85 120 Q90 125 95 120 Q100 125 105 120 Q110 125 115 120 Q120 125 125 120 L125 115 L75 115 Z" fill="#FFFFFF"/>
+          <rect x="98" y="96" width="4" height="14" fill="#FFD166"/>
+          <ellipse cx="100" cy="92" rx="3" ry="5" fill="#FF5722" class="flame-anim"/>
+        </svg>
+      </div>
+
+      <div class="w-full space-y-4 mb-4">
+        <p class="font-rounded font-bold text-slate-700 text-lg">Are you excited for what's next?</p>
+        <div class="flex gap-4 justify-center px-4">
+          <button onclick="goToScreen(3)" class="flex-1 py-3.5 bg-rose-500 text-white font-bold rounded-2xl shadow-lg hover:bg-rose-600 active:scale-95 transition pulse-btn">
+            Yes 💕
+          </button>
+          <button onclick="noBtnClick(this)" class="flex-1 py-3.5 bg-white text-rose-500 font-bold rounded-2xl border-2 border-rose-300 shadow hover:bg-rose-50 active:scale-95 transition">
+            No 😜
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SCREEN 3: BALLOON POP ==================== -->
+    <section id="screen3" class="screen flex-1 flex-col items-center justify-between px-6 py-6 z-20">
+      
+      <div class="w-full flex justify-between items-center text-xs font-bold text-rose-600">
+        <button onclick="goToScreen(2)" class="flex items-center gap-1 opacity-80 hover:opacity-100">
+          <i class="fas fa-chevron-left"></i> Back
+        </button>
+        <span id="balloonCounter" class="bg-white/80 px-3 py-1 rounded-full shadow-sm">0/4 Pop</span>
+      </div>
+
+      <div class="text-center mt-2">
+        <h2 class="font-rounded font-bold text-rose-600 text-2xl">Pop all 4 balloons 🎈</h2>
+        
+        <div id="topSentenceContainer" class="hidden min-h-[45px] items-center justify-center gap-2 font-handwriting text-3xl font-bold text-rose-600 tracking-wide mt-3 bg-white/90 backdrop-blur py-2 px-4 rounded-2xl shadow border border-pink-200 animate-bounce">
+          You are so special
+        </div>
+      </div>
+
+      <div class="w-full grid grid-cols-2 gap-6 my-2 px-4 min-h-[280px]">
+        <div id="balloonSlot1" class="h-36 flex items-center justify-center relative">
+          <div id="balloon1" onclick="popBalloon(1, 'You')" class="balloon cursor-pointer relative h-36 flex flex-col items-center justify-center transition hover:scale-105 active:scale-90">
+            <svg class="w-24 h-32 text-sky-400 filter drop-shadow-md" viewBox="0 0 100 120" fill="currentColor">
+              <ellipse cx="50" cy="50" rx="40" ry="48"/>
+              <polygon points="50,98 45,108 55,108"/>
+              <ellipse cx="35" cy="30" rx="8" ry="16" fill="#ffffff" opacity="0.35" transform="rotate(-20 35 30)"/>
+            </svg>
+            <div class="w-0.5 h-10 bg-sky-300 -mt-2"></div>
+          </div>
+          <span id="spotWord1" class="hidden font-handwriting text-3xl font-bold text-rose-600 animate-pulse">You</span>
+        </div>
+
+        <div id="balloonSlot2" class="h-36 flex items-center justify-center relative">
+          <div id="balloon2" onclick="popBalloon(2, 'are')" class="balloon cursor-pointer relative h-36 flex flex-col items-center justify-center transition hover:scale-105 active:scale-90">
+            <svg class="w-24 h-32 text-pink-400 filter drop-shadow-md" viewBox="0 0 100 120" fill="currentColor">
+              <ellipse cx="50" cy="50" rx="40" ry="48"/>
+              <polygon points="50,98 45,108 55,108"/>
+              <ellipse cx="35" cy="30" rx="8" ry="16" fill="#ffffff" opacity="0.35" transform="rotate(-20 35 30)"/>
+            </svg>
+            <div class="w-0.5 h-10 bg-pink-300 -mt-2"></div>
+          </div>
+          <span id="spotWord2" class="hidden font-handwriting text-3xl font-bold text-rose-600 animate-pulse">are</span>
+        </div>
+
+        <div id="balloonSlot3" class="h-36 flex items-center justify-center relative">
+          <div id="balloon3" onclick="popBalloon(3, 'so')" class="balloon cursor-pointer relative h-36 flex flex-col items-center justify-center transition hover:scale-105 active:scale-90">
+            <svg class="w-24 h-32 text-emerald-400 filter drop-shadow-md" viewBox="0 0 100 120" fill="currentColor">
+              <ellipse cx="50" cy="50" rx="40" ry="48"/>
+              <polygon points="50,98 45,108 55,108"/>
+              <ellipse cx="35" cy="30" rx="8" ry="16" fill="#ffffff" opacity="0.35" transform="rotate(-20 35 30)"/>
+            </svg>
+            <div class="w-0.5 h-10 bg-emerald-300 -mt-2"></div>
+          </div>
+          <span id="spotWord3" class="hidden font-handwriting text-3xl font-bold text-rose-600 animate-pulse">so</span>
+        </div>
+
+        <div id="balloonSlot4" class="h-36 flex items-center justify-center relative">
+          <div id="balloon4" onclick="popBalloon(4, 'special')" class="balloon cursor-pointer relative h-36 flex flex-col items-center justify-center transition hover:scale-105 active:scale-90">
+            <svg class="w-24 h-32 text-purple-400 filter drop-shadow-md" viewBox="0 0 100 120" fill="currentColor">
+              <ellipse cx="50" cy="50" rx="40" ry="48"/>
+              <polygon points="50,98 45,108 55,108"/>
+              <ellipse cx="35" cy="30" rx="8" ry="16" fill="#ffffff" opacity="0.35" transform="rotate(-20 35 30)"/>
+            </svg>
+            <div class="w-0.5 h-10 bg-purple-300 -mt-2"></div>
+          </div>
+          <span id="spotWord4" class="hidden font-handwriting text-3xl font-bold text-rose-600 animate-pulse">special</span>
+        </div>
+      </div>
+
+      <button id="balloonNextBtn" onclick="goToScreen(4)" class="w-full py-3.5 bg-rose-500 text-white font-bold rounded-2xl shadow-lg opacity-50 pointer-events-none transition mb-2">
+        Next Stage ➔
+      </button>
+    </section>
+
+    <!-- ==================== SCREEN 4: CANDLE BLOWING ==================== -->
+    <section id="screen4" class="screen flex-1 flex-col items-center justify-between px-6 py-6 z-20">
+      
+      <div class="w-full flex justify-between items-center text-xs font-bold text-rose-600">
+        <button onclick="goToScreen(3)" class="flex items-center gap-1 opacity-80 hover:opacity-100">
+          <i class="fas fa-chevron-left"></i> Back
+        </button>
+      </div>
+
+      <div class="text-center mt-2">
+        <h2 class="font-rounded font-bold text-rose-600 text-2xl">Blow the candle, Shiny 🎂</h2>
+        <p class="text-xs text-slate-600 mt-1">Tap the cake or mic button to blow it out!</p>
+      </div>
+
+      <div id="cakeGraphic" onclick="blowOutCandle()" class="cursor-pointer relative my-4 flex flex-col items-center justify-center transition hover:scale-105">
+        <div id="candleFlame" class="flame-anim text-3xl mb-[-6px] z-10 transition duration-500">
+          🔥
+        </div>
+        <div id="candleStick" class="w-3 h-12 bg-gradient-to-b from-rose-300 to-rose-500 rounded-t border-t-2 border-amber-300 z-10 shadow-sm"></div>
+        
+        <div class="relative w-56 h-36">
+          <svg class="w-full h-full filter drop-shadow-lg" viewBox="0 0 200 120" fill="none">
+            <ellipse cx="100" cy="110" rx="95" ry="10" fill="#E2E8F0"/>
+            <ellipse cx="100" cy="108" rx="85" ry="8" fill="#FFFFFF"/>
+            <path d="M 30 70 Q 100 85 170 70 L 170 100 Q 100 115 30 100 Z" fill="#6C483B"/>
+            <path d="M 30 70 Q 100 85 170 70 L 170 78 Q 100 93 30 78 Z" fill="#8D5B4C"/>
+            <path d="M 35 45 Q 100 58 165 45 L 165 72 Q 100 85 35 72 Z" fill="#FFF0F3"/>
+            <path d="M 35 45 Q 45 60 55 50 Q 65 62 75 52 Q 85 64 95 50 Q 105 62 115 52 Q 125 64 135 50 Q 145 62 155 50 Q 165 60 165 45 Z" fill="#FFB703"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="w-full space-y-3 mb-2">
+        <button id="micBtn" onclick="initMicBlow()" class="w-full py-3 bg-white text-rose-600 font-bold rounded-2xl border-2 border-rose-300 shadow-md hover:bg-rose-50 active:scale-95 transition flex items-center justify-center gap-2 text-sm">
+          <span>🎤 Blow into mic / Tap cake</span>
+        </button>
+        
+        <button onclick="goToScreen(5)" class="w-full py-3.5 bg-rose-500 text-white font-bold rounded-2xl shadow-lg hover:bg-rose-600 active:scale-95 transition flex items-center justify-center gap-2">
+          <span>Next ➔</span>
+        </button>
+      </div>
+
+      <div id="wishOverlay" class="absolute inset-0 bg-slate-950/90 z-50 flex flex-col items-center justify-center p-6 text-center opacity-0 pointer-events-none transition duration-1000">
+        <span class="text-5xl mb-4 animate-bounce">✨</span>
+        <h2 class="font-handwriting text-4xl font-bold text-pink-200 leading-relaxed">
+          Close your eyes<br/>& make a wish 🌟
+        </h2>
+        <p class="text-xs text-pink-300/70 mt-4">Taking you to your next surprise...</p>
+      </div>
+    </section>
+
+    <!-- ==================== SCREEN 5: ROSE BOUQUET ==================== -->
+    <section id="screen5" class="screen flex-1 flex-col items-center justify-between px-6 py-6 z-20">
+      
+      <div class="w-full flex justify-between items-center text-xs font-bold text-rose-600">
+        <button onclick="goToScreen(4)" class="flex items-center gap-1 opacity-80 hover:opacity-100">
+          <i class="fas fa-chevron-left"></i> Back
+        </button>
+      </div>
+
+      <div class="text-center mt-1">
+        <h2 class="font-rounded font-bold text-rose-600 text-2xl">Your Rose Bouquet 🌹</h2>
+      </div>
+
+      <div class="relative w-full flex-1 flex items-center justify-center my-2 max-w-[340px] mx-auto">
+        <div class="bubble-msg absolute top-1 left-0 z-20 bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[11px] font-bold text-pink-700 shadow-md border border-pink-200 animate-pulse">
+          Forever yours 🤍
+        </div>
+        <div class="bubble-msg absolute top-3 right-0 z-20 bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[11px] font-bold text-rose-700 shadow-md border border-pink-200">
+          We play more games Together 😉  
+        </div>
+        <div class="bubble-msg absolute top-1/4 left-[-6px] z-20 bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[11px] font-bold text-amber-700 shadow-md border border-amber-200">
+          You are sunshine ☀️
+        </div>
+        <div class="bubble-msg absolute top-1/3 right-[-6px] z-20 bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[11px] font-bold text-pink-800 shadow-md border border-pink-200">
+          Happy Birthday Shiny 💖
+        </div>
+        <div class="bubble-msg absolute bottom-16 left-0 z-20 bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[11px] font-bold text-rose-800 shadow-md border border-pink-200">
+          I'm lucky to have you 😊
+        </div>
+        <div class="bubble-msg absolute bottom-12 right-0 z-20 bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[11px] font-bold text-purple-800 shadow-md border border-purple-200">
+          You are my favorite person 💓
+        </div>
+
+        <div class="w-44 h-60 relative filter drop-shadow-xl z-10 transform hover:scale-105 transition">
+          <svg class="w-full h-full" viewBox="0 0 200 260" fill="none">
+            <polygon points="60,140 100,250 140,140" fill="#E29578"/>
+            <polygon points="50,130 100,250 150,130" fill="#FFDDD2"/>
+            <ellipse cx="100" cy="180" rx="14" ry="8" fill="#E63946"/>
+            <polygon points="100,180 85,200 100,190 115,200" fill="#E63946"/>
+            <circle cx="100" cy="100" r="22" fill="#D90429"/>
+            <circle cx="100" cy="100" r="14" fill="#EF233C"/>
+            <circle cx="100" cy="100" r="8" fill="#D90429"/>
+            <circle cx="70" cy="90" r="20" fill="#D90429"/>
+            <circle cx="70" cy="90" r="12" fill="#EF233C"/>
+            <circle cx="130" cy="90" r="20" fill="#D90429"/>
+            <circle cx="130" cy="90" r="12" fill="#EF233C"/>
+            <circle cx="100" cy="65" r="20" fill="#D90429"/>
+            <circle cx="100" cy="65" r="12" fill="#EF233C"/>
+            <circle cx="75" cy="65" r="18" fill="#D90429"/>
+            <circle cx="125" cy="65" r="18" fill="#D90429"/>
+            <path d="M 45 100 Q 30 90 40 80 Q 55 85 45 100 Z" fill="#2A9D8F"/>
+            <path d="M 155 100 Q 170 90 160 80 Q 145 85 155 100 Z" fill="#2A9D8F"/>
+          </svg>
+        </div>
+      </div>
+
+      <button onclick="goToScreen(6)" class="w-full py-3.5 bg-rose-500 text-white font-bold rounded-2xl shadow-lg hover:bg-rose-600 active:scale-95 transition flex items-center justify-center gap-2 mb-2 pulse-btn">
+        <span>Continue</span>
+        <i class="fas fa-arrow-right"></i>
+      </button>
+    </section>
+
+    <!-- ==================== SCREEN 6: ENVELOPE & LETTER ==================== -->
+    <section id="screen6" class="screen flex-1 flex-col items-center justify-between px-6 py-6 z-20">
+      
+      <div class="w-full flex justify-between items-center text-xs font-bold text-rose-600">
+        <button onclick="goToScreen(5)" class="flex items-center gap-1 opacity-80 hover:opacity-100">
+          <i class="fas fa-chevron-left"></i> Back
+        </button>
+      </div>
+
+      <div class="text-center mt-1">
+        <h2 class="font-rounded font-bold text-rose-600 text-2xl">A Message From My Heart 💌</h2>
+        <p class="text-xs text-slate-600 mt-1">Tap the envelope to open</p>
+      </div>
+
+      <div class="relative w-full flex-1 flex items-center justify-center my-2">
+        <div id="envelopeView" onclick="openEnvelope()" class="cursor-pointer w-full max-w-[280px] h-48 bg-rose-200 border-2 border-amber-300 rounded-2xl shadow-xl relative flex flex-col items-center justify-center transition hover:scale-105">
+          <div class="absolute top-0 inset-x-0 h-24 bg-rose-300 rounded-t-2xl envelope-top border-b border-amber-300/50"></div>
+          <div class="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center text-white text-xl shadow-md z-10 animate-pulse">
+            ❤️
+          </div>
+          <span class="text-xs font-bold text-rose-700 mt-8 z-10">TAP TO OPEN</span>
+        </div>
+
+        <div id="letterView" class="hidden w-full h-[370px] bg-amber-50/95 border-2 border-pink-300 rounded-2xl p-5 shadow-2xl flex-col justify-between text-left overflow-hidden relative">
+          <div class="absolute top-3 right-3 text-rose-400 text-xl">💖</div>
+          
+          <div class="letter-scroll overflow-y-auto pr-2 space-y-3 font-handwriting text-lg text-slate-800 leading-snug">
+            <p class="font-bold text-xl text-rose-600">Dear Shiny,</p>
+            <p>Happy Birthday to my super special sister! 🌸</p>
+            <p>You bring so much happiness, light, and warmth into everyone's life. Having you as my sister is one of the greatest blessings, and no matter how much time or distance changes, our bond will always remain special and strong.</p>
+            <p>Thank you for being yourself, for caring so genuinely, and for always being by my side. I wish you endless joy, success, and all the love in the world.</p>
+            <p class="font-bold text-rose-600 pt-2">With love and best wishes,<br/>Duke (Anna) 💖</p>
+          </div>
+
+          <div class="pt-2 text-center text-xs text-slate-400 border-t border-pink-200/60">
+            Scroll down to read full note 📜
+          </div>
+        </div>
+      </div>
+
+      <button onclick="goToScreen(7)" class="w-full py-3.5 bg-rose-500 text-white font-bold rounded-2xl shadow-lg hover:bg-rose-600 active:scale-95 transition flex items-center justify-center gap-2 mb-2">
+        <span>One last surprise →</span>
+      </button>
+    </section>
+
+    <!-- ==================== SCREEN 7: GIFT BOX & POLAROID STACK ==================== -->
+    <section id="screen7" class="screen flex-1 flex-col items-center justify-between px-6 py-6 z-20 text-center">
+      
+      <div class="w-full flex justify-between items-center text-xs font-bold text-rose-600">
+        <button onclick="goToScreen(6)" class="flex items-center gap-1 opacity-80 hover:opacity-100">
+          <i class="fas fa-chevron-left"></i> Back
+        </button>
+      </div>
+
+      <!-- Step A: Gift Box Counter -->
+      <div id="giftStepContainer" class="flex-1 flex flex-col items-center justify-center w-full">
+        <h2 class="font-rounded font-bold text-rose-600 text-2xl mb-1">One Last Thing...</h2>
+        <p class="text-xs text-slate-600 mb-6">Tap the gift box 3 times to unwrap!</p>
+
+        <div onclick="tapGiftBox()" class="cursor-pointer relative w-44 h-44 flex items-center justify-center transition hover:scale-105 active:scale-95">
+          <div id="giftCounterBadge" class="absolute -top-2 -right-2 w-9 h-9 bg-rose-500 text-white font-bold rounded-full flex items-center justify-center text-sm shadow-md z-20 border-2 border-white">
+            3
+          </div>
+
+          <svg class="w-full h-full filter drop-shadow-xl" viewBox="0 0 200 200" fill="none">
+            <rect x="35" y="80" width="130" height="95" rx="10" fill="#FF85A1"/>
+            <rect x="25" y="60" width="150" height="28" rx="6" fill="#FF4D6D"/>
+            <rect x="90" y="80" width="20" height="95" fill="#FFD166"/>
+            <rect x="90" y="60" width="20" height="28" fill="#FFD166"/>
+            <ellipse cx="80" cy="50" rx="18" ry="12" fill="#FFD166"/>
+            <ellipse cx="120" cy="50" rx="18" ry="12" fill="#FFD166"/>
+            <circle cx="100" cy="52" r="8" fill="#FFB703"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Step B: FIXED POLAROID STACK CONTAINER -->
+      <div id="polaroidStackContainer" class="hidden flex-1 flex-col items-center justify-between w-full py-1">
+        <div class="text-center">
+          <h2 class="font-rounded font-bold text-rose-600 text-xl">Precious Memories 📸</h2>
+          <p class="text-xs text-slate-600 mt-0.5">Tap card to swipe to next memory</p>
+        </div>
+
+        <div class="polaroid-deck-area">
+          
+          <!-- Photo 1: Toddler with metal bowl -->
+          <div id="photoCard1" onclick="popTopCard(1)" class="polaroid-card z-70" style="transform: rotate(-2deg);">
+            <div class="polaroid-img-box">
+              <img src="photo1.jpg" alt="Memory 1" class="w-full h-full object-cover rounded-lg" />
+            </div>
+            <div class="polaroid-caption-box">
+              <p class="font-handwriting text-rose-600 font-bold text-lg leading-tight">The cutest little star! 💖</p>
+              <span class="text-[10px] text-slate-400 font-semibold">(1/7)</span>
+            </div>
+          </div>
+
+          <!-- Photo 2: Girl with little boy -->
+          <div id="photoCard2" onclick="popTopCard(2)" class="polaroid-card z-60" style="transform: rotate(3deg);">
+            <div class="polaroid-img-box">
+              <img src="photo2.jpg" alt="Memory 2" class="w-full h-full object-cover rounded-lg" />
+            </div>
+            <div class="polaroid-caption-box">
+              <p class="font-handwriting text-rose-600 font-bold text-lg leading-tight">Sweetest childhood memories! 🌸</p>
+              <span class="text-[10px] text-slate-400 font-semibold">(2/7)</span>
+            </div>
+          </div>
+
+          <!-- Photo 3: Feeding cake to toddler -->
+          <div id="photoCard3" onclick="popTopCard(3)" class="polaroid-card z-50" style="transform: rotate(-3deg);">
+            <div class="polaroid-img-box">
+              <img src="photo3.jpg" alt="Memory 3" class="w-full h-full object-cover rounded-lg" />
+            </div>
+            <div class="polaroid-caption-box">
+              <p class="font-handwriting text-rose-600 font-bold text-lg leading-tight">Always sharing love & happiness! 🍰</p>
+              <span class="text-[10px] text-slate-400 font-semibold">(3/7)</span>
+            </div>
+          </div>
+
+          <!-- Photo 4: Two kids at wooden door -->
+          <div id="photoCard4" onclick="popTopCard(4)" class="polaroid-card z-40" style="transform: rotate(2deg);">
+            <div class="polaroid-img-box">
+              <img src="photo4.jpg" alt="Memory 4" class="w-full h-full object-cover rounded-lg" />
+            </div>
+            <div class="polaroid-caption-box">
+              <p class="font-handwriting text-rose-600 font-bold text-lg leading-tight">Growing up together, bond forever! ✨</p>
+              <span class="text-[10px] text-slate-400 font-semibold">(4/7)</span>
+            </div>
+          </div>
+
+          <!-- Photo 5: Girl in green lehenga -->
+          <div id="photoCard5" onclick="popTopCard(5)" class="polaroid-card z-30" style="transform: rotate(-1deg);">
+            <div class="polaroid-img-box">
+              <img src="photo5.jpg" alt="Memory 5" class="w-full h-full object-cover rounded-lg" />
+            </div>
+            <div class="polaroid-caption-box">
+              <p class="font-handwriting text-rose-600 font-bold text-lg leading-tight">Elegance & grace! 👑</p>
+              <span class="text-[10px] text-slate-400 font-semibold">(5/7)</span>
+            </div>
+          </div>
+
+          <!-- Photo 6: Girl in blue dupatta with phone -->
+          <div id="photoCard6" onclick="popTopCard(6)" class="polaroid-card z-20" style="transform: rotate(3deg);">
+            <div class="polaroid-img-box">
+              <img src="photo6.jpg" alt="Memory 6" class="w-full h-full object-cover rounded-lg" />
+            </div>
+            <div class="polaroid-caption-box">
+              <p class="font-handwriting text-rose-600 font-bold text-lg leading-tight">Shining bright in every moment! 💙</p>
+              <span class="text-[10px] text-slate-400 font-semibold">(6/7)</span>
+            </div>
+          </div>
+
+          <!-- Photo 7: Sister holding toddler -->
+          <div id="photoCard7" onclick="popTopCard(7)" class="polaroid-card z-10" style="transform: rotate(-2deg);">
+            <div class="polaroid-img-box">
+              <img src="photo7.jpg" alt="Memory 7" class="w-full h-full object-cover rounded-lg" />
+            </div>
+            <div class="polaroid-caption-box">
+              <p class="font-handwriting text-rose-600 font-bold text-lg leading-tight">Treasure trove of special moments! 🧸</p>
+              <span class="text-[10px] text-slate-400 font-semibold">(7/7)</span>
+            </div>
+          </div>
+
+        </div>
+
+        <button onclick="skipToFinalCard()" class="text-xs font-bold text-rose-600 underline opacity-80 hover:opacity-100 mb-1">
+          Skip to end card →
+        </button>
+      </div>
+
+      <!-- Step C: Grand Finale Celebration Card View -->
+      <div id="finalCardContainer" class="hidden flex-1 flex-col items-center justify-between w-full py-2">
+        <div class="w-full bg-white/90 backdrop-blur-md border-2 border-pink-300 rounded-3xl p-5 shadow-xl flex flex-col items-center">
+          
+          <div class="w-48 h-36 relative mb-2">
+            <svg class="w-full h-full" viewBox="0 0 200 140" fill="none">
+              <circle cx="65" cy="70" r="30" fill="#FFFFFF"/>
+              <ellipse cx="52" cy="30" rx="8" ry="22" fill="#FFFFFF"/>
+              <ellipse cx="52" cy="30" rx="4" ry="14" fill="#FFCCD5"/>
+              <ellipse cx="78" cy="30" rx="8" ry="22" fill="#FFFFFF"/>
+              <ellipse cx="78" cy="30" rx="4" ry="14" fill="#FFCCD5"/>
+              <circle cx="58" cy="65" r="3" fill="#333"/>
+              <circle cx="72" cy="65" r="3" fill="#333"/>
+              <ellipse cx="65" cy="72" rx="4" ry="3" fill="#FF85A1"/>
+
+              <circle cx="135" cy="70" r="30" fill="#8D5B4C"/>
+              <circle cx="118" cy="48" r="10" fill="#8D5B4C"/>
+              <circle cx="152" cy="48" r="10" fill="#8D5B4C"/>
+              <circle cx="128" cy="65" r="3" fill="#333"/>
+              <circle cx="142" cy="65" r="3" fill="#333"/>
+              <ellipse cx="135" cy="72" rx="5" ry="4" fill="#D90429"/>
+
+              <rect x="85" y="85" width="30" height="20" rx="4" fill="#FFCCD5"/>
+              <rect x="82" y="80" width="36" height="8" rx="2" fill="#FFF"/>
+              <rect x="99" y="72" width="2" height="8" fill="#FFB703"/>
+              <ellipse cx="100" cy="70" rx="2" ry="3" fill="#FF5722"/>
+            </svg>
+          </div>
+
+          <h2 class="font-rounded font-bold text-rose-600 text-xl">Lots of love for you Shiny ❤️</h2>
+          <p class="text-xs text-slate-600 mt-1">Once again, Happy Birthday Shiny!</p>
+
+          <button onclick="restartApp()" class="mt-4 px-6 py-2.5 bg-rose-500 text-white font-bold text-sm rounded-full shadow-md hover:bg-rose-600 active:scale-95 transition flex items-center gap-2">
+            <i class="fas fa-rotate-right"></i>
+            <span>Replay</span>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    let currentPasscode = "";
+    const CORRECT_PASSCODE = "2910";
+    let poppedBalloons = 0;
+    let candleBlown = false;
+    let giftTapsLeft = 3;
+    let activePhotoIndex = 1;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      createFloatingHearts();
+    });
+
+    function createFloatingHearts() {
+      const container = document.getElementById('heartsContainer');
+      const symbols = ['❤️', '💖', '🌸', '✨', '💕', '🎈'];
+      for (let i = 0; i < 18; i++) {
+        const heart = document.createElement('div');
+        heart.className = 'bg-heart text-lg sm:text-2xl';
+        heart.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.animationDelay = (Math.random() * 6) + 's';
+        heart.style.animationDuration = (6 + Math.random() * 6) + 's';
+        container.appendChild(heart);
+      }
+    }
+
+    function goToScreen(screenNumber) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const targetScreen = document.getElementById(`screen${screenNumber}`);
+      if (targetScreen) {
+        targetScreen.classList.add('active');
+      }
+
+      if (screenNumber === 2) {
+        fireConfettiBurst();
+      }
+    }
+
+    function pressKey(digit) {
+      if (currentPasscode.length < 4) {
+        currentPasscode += digit;
+        updatePasscodeUI();
+        playBeepSound();
+
+        if (currentPasscode.length === 4) {
+          setTimeout(() => {
+            if (currentPasscode === CORRECT_PASSCODE) {
+              fireConfettiBurst();
+              
+              const bgMusic = document.getElementById('bgMusic');
+              const icon = document.getElementById('musicIcon');
+              if (bgMusic) {
+                bgMusic.play().then(() => {
+                  if (icon) icon.className = "fas fa-pause text-xs";
+                }).catch(() => {});
+              }
+
+              goToScreen(2);
+            } else {
+              const container = document.getElementById('passcodeBoxContainer');
+              container.classList.add('animate-bounce');
+              document.getElementById('passHint').innerText = "Incorrect passcode! Try 2910";
+              document.getElementById('passHint').classList.add('text-rose-600', 'font-bold');
+              setTimeout(() => {
+                container.classList.remove('animate-bounce');
+                currentPasscode = "";
+                updatePasscodeUI();
+              }, 600);
+            }
+          }, 200);
+        }
+      }
+    }
+
+    function pressBackspace() {
+      if (currentPasscode.length > 0) {
+        currentPasscode = currentPasscode.slice(0, -1);
+        updatePasscodeUI();
+      }
+    }
+
+    function updatePasscodeUI() {
+      const boxes = document.querySelectorAll('.pass-box');
+      boxes.forEach((box, index) => {
+        if (index < currentPasscode.length) {
+          box.innerText = "🌸";
+          box.classList.add('border-rose-500', 'bg-rose-50');
+        } else {
+          box.innerText = "";
+          box.classList.remove('border-rose-500', 'bg-rose-50');
+        }
+      });
+    }
+
+    function noBtnClick(btn) {
+      btn.innerText = "Yes 🥰";
+      btn.className = "flex-1 py-3.5 bg-rose-500 text-white font-bold rounded-2xl shadow-lg transition";
+      btn.onclick = () => goToScreen(3);
+    }
+
+    function popBalloon(balloonId, word) {
+      const balloon = document.getElementById(`balloon${balloonId}`);
+      const spotWord = document.getElementById(`spotWord${balloonId}`);
+
+      if (balloon && !balloon.classList.contains('popped')) {
+        balloon.classList.add('popped');
+        balloon.style.display = 'none';
+
+        if (spotWord) {
+          spotWord.classList.remove('hidden');
+        }
+
+        poppedBalloons++;
+        document.getElementById('balloonCounter').innerText = `${poppedBalloons}/4 Pop`;
+
+        playPopSound();
+        fireConfettiBurst();
+
+        if (poppedBalloons === 4) {
+          setTimeout(() => {
+            for (let i = 1; i <= 4; i++) {
+              const sw = document.getElementById(`spotWord${i}`);
+              if (sw) sw.style.display = 'none';
+            }
+
+            const topSentence = document.getElementById('topSentenceContainer');
+            if (topSentence) {
+              topSentence.classList.remove('hidden');
+              topSentence.classList.add('flex');
+            }
+
+            const nextBtn = document.getElementById('balloonNextBtn');
+            nextBtn.classList.remove('opacity-50', 'pointer-events-none');
+            nextBtn.classList.add('pulse-btn');
+          }, 600);
+        }
+      }
+    }
+
+    function blowOutCandle() {
+      if (!candleBlown) {
+        candleBlown = true;
+        const flame = document.getElementById('candleFlame');
+        flame.style.opacity = '0';
+        flame.style.transform = 'scale(0)';
+
+        playWhooshSound();
+        fireConfettiBurst();
+
+        const overlay = document.getElementById('wishOverlay');
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100');
+
+        setTimeout(() => {
+          overlay.classList.remove('opacity-100');
+          overlay.classList.add('opacity-0', 'pointer-events-none');
+          goToScreen(5);
+        }, 2500);
+      }
+    }
+
+    function initMicBlow() {
+      if (candleBlown) return;
+      blowOutCandle();
+    }
+
+    function openEnvelope() {
+      const envelope = document.getElementById('envelopeView');
+      const letter = document.getElementById('letterView');
+      
+      envelope.classList.add('hidden');
+      letter.classList.remove('hidden');
+      letter.classList.add('flex');
+      fireConfettiBurst();
+    }
+
+    function tapGiftBox() {
+      if (giftTapsLeft > 1) {
+        giftTapsLeft--;
+        document.getElementById('giftCounterBadge').innerText = giftTapsLeft;
+        playPopSound();
+      } else {
+        document.getElementById('giftStepContainer').classList.add('hidden');
+        const stackContainer = document.getElementById('polaroidStackContainer');
+        stackContainer.classList.remove('hidden');
+        stackContainer.classList.add('flex');
+        
+        fireConfettiBurst();
+      }
+    }
+
+    function popTopCard(photoId) {
+      const card = document.getElementById(`photoCard${photoId}`);
+      if (card && !card.classList.contains('swiped-out')) {
+        card.classList.add('swiped-out');
+        playPopSound();
+
+        activePhotoIndex++;
+        if (activePhotoIndex > 7) {
+          setTimeout(() => {
+            skipToFinalCard();
+          }, 450);
+        }
+      }
+    }
+
+    function skipToFinalCard() {
+      document.getElementById('polaroidStackContainer').classList.add('hidden');
+      const finalCard = document.getElementById('finalCardContainer');
+      finalCard.classList.remove('hidden');
+      finalCard.classList.add('flex');
+      fireConfettiBurst();
+    }
+
+    function restartApp() {
+      currentPasscode = "";
+      poppedBalloons = 0;
+      candleBlown = false;
+      giftTapsLeft = 3;
+      activePhotoIndex = 1;
+
+      updatePasscodeUI();
+      document.getElementById('passHint').innerText = "Enter passcode: 2910";
+
+      for (let i = 1; i <= 4; i++) {
+        const b = document.getElementById(`balloon${i}`);
+        if (b) {
+          b.style.display = 'flex';
+          b.classList.remove('popped');
+        }
+        const sw = document.getElementById(`spotWord${i}`);
+        if (sw) {
+          sw.classList.add('hidden');
+          sw.style.display = '';
+        }
+      }
+      document.getElementById('balloonCounter').innerText = "0/4 Pop";
+      const topSentence = document.getElementById('topSentenceContainer');
+      if (topSentence) {
+        topSentence.classList.add('hidden');
+        topSentence.classList.remove('flex');
+      }
+
+      const flame = document.getElementById('candleFlame');
+      if (flame) {
+        flame.style.opacity = '1';
+        flame.style.transform = 'scale(1)';
+      }
+
+      document.getElementById('envelopeView').classList.remove('hidden');
+      document.getElementById('letterView').classList.add('hidden');
+
+      document.getElementById('giftStepContainer').classList.remove('hidden');
+      document.getElementById('giftCounterBadge').innerText = "3";
+      document.getElementById('polaroidStackContainer').classList.add('hidden');
+      document.getElementById('finalCardContainer').classList.add('hidden');
+
+      for (let i = 1; i <= 7; i++) {
+        const pc = document.getElementById(`photoCard${i}`);
+        if (pc) {
+          pc.classList.remove('swiped-out');
+        }
+      }
+
+      goToScreen(1);
+    }
+
+    function toggleMusic() {
+      const music = document.getElementById('bgMusic');
+      const icon = document.getElementById('musicIcon');
+      if (music.paused) {
+        music.play().then(() => {
+          icon.className = "fas fa-pause text-xs";
+        }).catch(() => {});
+      } else {
+        music.pause();
+        icon.className = "fas fa-music text-xs";
+      }
+    }
+
+    function fireConfettiBurst() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    function playBeepSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = 587.33;
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+      } catch(e) {}
+    }
+
+    function playPopSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+      } catch(e) {}
+    }
+
+    function playWhooshSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } catch(e) {}
+    }
+  </script>
+</body>
+</html>
